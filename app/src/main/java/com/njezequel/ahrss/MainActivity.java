@@ -4,14 +4,20 @@ import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.SimpleAdapter;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String DEBUG_TAG = "MaintActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +44,19 @@ public class MainActivity extends AppCompatActivity {
                 this, data, R.layout.item_rss_list, viewsKeys, views
         );
         rssListFragment.setListAdapter(rssListAdapter);
+
+        // Xml parsing test
+        XmlFeedParser xmlFeedParser = new XmlFeedParser();
+        XmlPullParser parser = getResources().getXml(R.xml.static_feed);
+        List list = null;
+
+        try {
+            list = xmlFeedParser.parse(parser);
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
