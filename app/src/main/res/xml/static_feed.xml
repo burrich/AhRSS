@@ -2,11 +2,11 @@
 <feed>     
     <entry>
         <title type="text">title 1</title>
-        <date>2012-02-25T00:30:54Z</date>
+        <date>18/12/2015 08:00</date>
     </entry>
 
     <entry>
         <title type="text">title 2</title>
-        <date>2013-02-25T00:30:54Z</date>
+        <date>19/12/2015 09:00</date>
     </entry>
 </feed>
