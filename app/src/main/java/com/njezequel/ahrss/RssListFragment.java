@@ -30,7 +30,10 @@ import com.njezequel.ahrss.XmlFeedParser.Entry;
  * Xml feed is load asynchronously inside the nested DownloadFeedTask class (AsyncTask)
  */
 public class RssListFragment extends ListFragment {
-    private static final String FEED_URL = "http://jezequel-n.com/static_feed.xml";
+    private static final String FEED_URL = "http://www.gamekult.com/feeds/actu.html";
+    // http://www.metalorgie.com/feed/news
+    // http://www.gamekult.com/feeds/actu.html
+    // http://www.byzegut.fr/feeds/posts/default
 
     /**
      * Root view of the fragment layout.
@@ -67,13 +70,21 @@ public class RssListFragment extends ListFragment {
 
             lineData = new HashMap<>();
             lineData.put("title", entry.title);
+            lineData.put("feed", entry.feed);
+            lineData.put("summary", entry.summary);
+            lineData.put("link", entry.link);
             lineData.put("date", entry.date);
             data.add(lineData);
         }
 
         // keys-view mapping of listview line elements
-        String[] viewsKeys = {"title", "date"};
-        int[] views = {R.id.text1_rss_list, R.id.text2_rss_list};
+        String[] viewsKeys = {"title", "feed", "summary", "date"};
+        int[] views = {
+                R.id.rss_list_title,
+                R.id.rss_list_feed,
+                R.id.rss_list_summary,
+                R.id.rss_list_date
+        };
 
         // Set adapter
         SimpleAdapter rssListAdapter = new SimpleAdapter(

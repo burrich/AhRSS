@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingTop="@dimen/rss_list_item_vertical_padding"
-    android:paddingBottom="@dimen/rss_list_item_vertical_padding">
+    android:paddingBottom="@dimen/rss_list_item_vertical_padding"
+    android:paddingRight="@dimen/rss_list_right_padding"
+    android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/icon_rss_list"
-        android:layout_marginRight="16dp"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/icon_placeholder" />
-
-    <TextView android:id="@+id/text1_rss_list"
+    <TextView android:id="@+id/rss_list_title"
         android:textSize="16sp"
         android:textStyle="bold"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/icon_rss_list"
-        android:layout_alignParentRight="true"
-        android:layout_alignTop="@id/icon_rss_list"
-        android:text="test" />
+        android:text="@string/rss_list_placeholder" />
 
-    <TextView android:id="@+id/text2_rss_list"
+    <TextView android:id="@+id/rss_list_feed"
         android:textSize="16sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/icon_rss_list"
-        android:layout_alignParentRight="true"
-        android:layout_alignBottom="@id/icon_rss_list"
-        android:text="test" />
-</RelativeLayout>
+        android:text="@string/rss_list_placeholder" />
+
+    <TextView android:id="@+id/rss_list_summary"
+        android:textSize="16sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/rss_list_item_elt_vertical_padding"
+        android:text="@string/rss_list_placeholder" />
+
+    <TextView android:id="@+id/rss_list_date"
+        android:textSize="16sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/rss_list_item_elt_vertical_padding"
+        android:text="@string/rss_list_placeholder" />
+</LinearLayout>

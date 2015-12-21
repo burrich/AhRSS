@@ -2,6 +2,7 @@
     <string name="app_name">AhRSS</string>
     <string name="action_settings">Settings</string>
     <string name="empty_rss_list">No data</string>
+    <string name="rss_list_placeholder">Test</string>
     <string name="no_connection">Cannot connect to the network, check your connection.</string>
     <string name="feed_loading_error">Error while loading the feed.</string>
 </resources>
