@@ -34,6 +34,8 @@ public class RssListFragment extends ListFragment {
     // http://www.metalorgie.com/feed/news
     // http://www.gamekult.com/feeds/actu.html
     // http://www.byzegut.fr/feeds/posts/default
+    // http://stackoverflow.com/feeds
+    // http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
 
     /**
      * Root view of the fragment layout.
@@ -127,7 +129,7 @@ public class RssListFragment extends ListFragment {
         protected List<Entry> doInBackground(String... urls) {
             try {
                 return loadXmlFromNetwork(urls[0]);
-            } catch (XmlPullParserException|IOException e) {
+            } catch (XmlPullParserException|IOException|IllegalArgumentException e) {
                 e.printStackTrace();
                 return null;
             }

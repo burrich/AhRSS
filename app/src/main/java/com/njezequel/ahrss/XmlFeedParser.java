@@ -8,8 +8,13 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Provide methods in order to parse an xml feed stream (rss or atom).
@@ -53,9 +58,7 @@ public class XmlFeedParser {
      * @throws XmlPullParserException
      * @throws IOException
      */
-    private List<Entry> readFeed(XmlPullParser parser)
-            throws XmlPullParserException, IOException {
-
+    private List<Entry> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
         List<Entry> entries = new ArrayList<>();
         String currentTag = parser.getName();
         String feedTitle = null;
@@ -106,7 +109,8 @@ public class XmlFeedParser {
      * @throws XmlPullParserException
      * @throws IOException
      */
-    private Entry readEntry(XmlPullParser parser, String entryTag) throws XmlPullParserException, IOException {
+    private Entry readEntry(XmlPullParser parser, String entryTag)
+            throws XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, ns, entryTag);
 
         String title = null;
@@ -219,7 +223,7 @@ public class XmlFeedParser {
         // Cut text if necessary and concat "..."
         int maxChar = 200;
         if (summary.length() > maxChar) {
-            summary = summary.substring(0, maxChar-4).concat("...");
+            summary = summary.substring(0, maxChar - 4).concat("...");
         }
 
         parser.require(XmlPullParser.END_TAG, ns, summaryTag);
@@ -228,21 +232,90 @@ public class XmlFeedParser {
 
     /**
      * Read a date tag text content inside a feed tag.
+     * Return examples :
+     * 2 min
+     * 23 h
+     * 20 Dec
      *
      * @param parser parser object
      * @param dateTag pubDate for rss, updated for atom
      * @return date String
      * @throws IOException
      * @throws XmlPullParserException
+     * @throws IllegalArgumentException
      */
     private String readDate(XmlPullParser parser, String dateTag)
-            throws IOException, XmlPullParserException {
+            throws IOException, XmlPullParserException, IllegalArgumentException {
         parser.require(XmlPullParser.START_TAG, ns, dateTag);
-        String date = readText(parser);
+        String dateString = readText(parser);
         parser.require(XmlPullParser.END_TAG, ns, dateTag);
 
-        return date;
+        // TODO: manage optionnal publication date for atom feed
+
+        // Get Date from String with correct pattern
+
+        // Possible date patterns
+        List<String> compatiblesPatterns = new ArrayList<>();
+        // rss
+        compatiblesPatterns.add("E, d MMM yyyy k:m:s Z");
+        // atom
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:sZ");
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'Z'"); // stackoverflow
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'SZ");
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'SSZ");
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'SSSZ"); // zegut
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'S'Z'");
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'SS'Z'");
+        compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'SSS'Z'");
+
+        Date date = null;
+        Long dateTime = 0l;
+        int loopCounter = 0;
+        // Checking right pattern
+        for (String pattern : compatiblesPatterns) {
+            loopCounter++;
+            SimpleDateFormat dateFormat = new SimpleDateFormat(pattern, Locale.ENGLISH);
+
+            // UTC setting for missing time zone inside the pattern ('Z')
+            // Default time zone is the system time zone
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            // Parsing date string into a Date object
+            date = dateFormat.parse(dateString, new ParsePosition(0));
+
+            try {
+                // date time (UTC)
+                dateTime = date.getTime();
+                break;
+            } catch (NullPointerException e) {
+                if (loopCounter == compatiblesPatterns.size()) {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+
+        // Computing elapsed time
+        long elapsedTime = System.currentTimeMillis() - dateTime;
+
+        // Affect right date format (twitter style)
+        if (elapsedTime < 1000 * 60 * 60) { // Less than 1h
+            int min = (int) elapsedTime / (1000 * 60);
+
+            if (min == 0)
+                min = 1;
+
+            dateString = min + " min";
+        } else if (elapsedTime <  1000 * 60 * 60 * 24) { // Less than 24h
+            int hour = (int) elapsedTime / (1000 * 60 * 60);
+
+            dateString = hour + " h";
+        } else { // Another day
+            dateString = new SimpleDateFormat("d MMM", Locale.ENGLISH).format(date);
+        }
+
+        return dateString;
     }
+
 
     /**
      * Read a text content from a tag
