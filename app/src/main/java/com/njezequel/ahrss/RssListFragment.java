@@ -7,6 +7,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ListFragment;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,9 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.njezequel.ahrss.XmlFeedParser.Entry;
@@ -29,7 +34,8 @@ import com.njezequel.ahrss.XmlFeedParser.Entry;
  * ListFragment for displaying a feed entries list.
  * Xml feed is load asynchronously inside the nested DownloadFeedTask class (AsyncTask)
  */
-public class RssListFragment extends ListFragment {
+public class RssListFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
+    private static final String DEBUG_TAG = "RssListFragment";
     private static final String FEED_URL = "http://www.gamekult.com/feeds/actu.html";
     // http://www.metalorgie.com/feed/news
     // http://www.gamekult.com/feeds/actu.html
@@ -37,10 +43,10 @@ public class RssListFragment extends ListFragment {
     // http://stackoverflow.com/feeds
     // http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
 
-    /**
-     * Root view of the fragment layout.
-     */
-    private View mCoordinatorView = null;
+    private View mCoordinatorView = null; // Root view of the fragment layout
+    private SwipeRefreshLayout mSwipeLayout = null;
+    private List<Map<String, String>> mData = null;
+    private SimpleAdapter mListAdapter = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -54,19 +60,67 @@ public class RssListFragment extends ListFragment {
 
         // Loading rss feed
         // We need the root view (mCoordinatorView) before call in order to use Snackbar inside
-        loadFeed();
+        this.loadFeed();
 
         return mCoordinatorView;
     }
 
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        // Setting swipe layout listener for pull to refresh
+        mSwipeLayout = (SwipeRefreshLayout)
+                getActivity().findViewById(R.id.rss_list_swipe_refresh_layout);
+        mSwipeLayout.setOnRefreshListener(this);
+    }
+
+    @Override
+    public void onRefresh() {
+        // Updating entries when the user pull to refresh
+        loadFeed();
+    }
+
     /**
-     * Set a SimpleAdapter to the fragment.
+     * Set a SimpleAdapter to the fragment or update adapter data.
+     *
+     * @param entries returned after xml parsing
+     */
+    private void bindDataToAdapter(List<Entry> entries) {
+        if (mData == null) { // New adapter
+            mData = new ArrayList<>();
+
+            addingEntriesToDataMap(entries);
+
+            // Keys-view mapping of listview line elements
+            String[] viewsKeys = {"title", "feed", "summary", "date"};
+            int[] views = {
+                    R.id.rss_list_title,
+                    R.id.rss_list_feed,
+                    R.id.rss_list_summary,
+                    R.id.rss_list_date
+            };
+
+            // Set adapter
+            mListAdapter = new SimpleAdapter(
+                    getContext(), mData, R.layout.item_rss_list, viewsKeys, views
+            );
+            this.setListAdapter(mListAdapter);
+
+        } else { // Updating data
+            mData.clear();
+            addingEntriesToDataMap(entries);
+            mListAdapter.notifyDataSetChanged();
+            mSwipeLayout.setRefreshing(false);
+        }
+    }
+
+    /**
+     * Set new data to the map which represent list items elements
      *
      * @param entries Entry list
      */
-    private void setListViewAdapter(List<Entry> entries) {
-        List<Map<String, String>> data = new ArrayList<>();
-
+    private void addingEntriesToDataMap(List<Entry> entries) {
         for (Entry entry : entries) {
             Map<String, String> lineData;
 
@@ -75,24 +129,45 @@ public class RssListFragment extends ListFragment {
             lineData.put("feed", entry.feed);
             lineData.put("summary", entry.summary);
             lineData.put("link", entry.link);
-            lineData.put("date", entry.date);
-            data.add(lineData);
+            lineData.put("date", formatDate(entry.date));
+
+            mData.add(lineData);
+        }
+    }
+
+    /**
+     * Formating an entry date to a twitter string date style
+     * Return examples :
+     * 2 min
+     * 23 h
+     * 20 Dec
+     *
+     * @param date an Entry date
+     * @return date String
+     */
+    private String formatDate(Date date) { // TODO: move to XmlFeedParser
+        // Computing elapsed time
+        long dateTime = date.getTime();
+        long elapsedTime = System.currentTimeMillis() - dateTime;
+
+        // Affect right date format (twitter style)
+        String dateString;
+        if (elapsedTime < 1000 * 60 * 60) { // Less than 1h
+            int min = (int) elapsedTime / (1000 * 60);
+
+            if (min == 0)
+                min = 1;
+
+            dateString = min + " min";
+        } else if (elapsedTime <  1000 * 60 * 60 * 24) { // Less than 24h
+            int hour = (int) elapsedTime / (1000 * 60 * 60);
+
+            dateString = hour + " h";
+        } else { // Another day
+            dateString = new SimpleDateFormat("d MMM", Locale.ENGLISH).format(date);
         }
 
-        // keys-view mapping of listview line elements
-        String[] viewsKeys = {"title", "feed", "summary", "date"};
-        int[] views = {
-                R.id.rss_list_title,
-                R.id.rss_list_feed,
-                R.id.rss_list_summary,
-                R.id.rss_list_date
-        };
-
-        // Set adapter
-        SimpleAdapter rssListAdapter = new SimpleAdapter(
-                getContext(), data, R.layout.item_rss_list, viewsKeys, views
-        );
-        this.setListAdapter(rssListAdapter);
+        return dateString;
     }
 
     /**
@@ -119,7 +194,7 @@ public class RssListFragment extends ListFragment {
 
     /**
      * An AsyncTask task to load an xml feed.
-     * TODO: replace by a Loader ?
+     * TODO: replace by a Loader ? (AsyncTaskLoader)
      */
     private class DownloadFeedTask extends AsyncTask<String, Void, List<Entry>> {
         private static final int READ_TIMEOUT = 10000;
@@ -138,7 +213,8 @@ public class RssListFragment extends ListFragment {
         @Override
         protected void onPostExecute(List<Entry> entries) {
             if (entries != null) {
-                setListViewAdapter(entries);
+                // Call bindDataToAdapater() UI thread method
+                bindDataToAdapter(entries);
             } else {
                 Snackbar.make(
                         mCoordinatorView,

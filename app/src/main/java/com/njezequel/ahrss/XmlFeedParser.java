@@ -16,10 +16,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+// TODO: abastract class
+
 /**
  * Provide methods in order to parse an xml feed stream (rss or atom).
  * XmlPullParser implementation with Xml.newPullParser().
- * TODO: abastract class
  *
  * @see XmlPullParser
  */
@@ -116,7 +117,7 @@ public class XmlFeedParser {
         String title = null;
         String link = null;
         String summary = null;
-        String date = null;
+        Date date = null;
 
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
@@ -232,19 +233,15 @@ public class XmlFeedParser {
 
     /**
      * Read a date tag text content inside a feed tag.
-     * Return examples :
-     * 2 min
-     * 23 h
-     * 20 Dec
      *
      * @param parser parser object
      * @param dateTag pubDate for rss, updated for atom
-     * @return date String
+     * @return Date object
      * @throws IOException
      * @throws XmlPullParserException
      * @throws IllegalArgumentException
      */
-    private String readDate(XmlPullParser parser, String dateTag)
+    private Date readDate(XmlPullParser parser, String dateTag)
             throws IOException, XmlPullParserException, IllegalArgumentException {
         parser.require(XmlPullParser.START_TAG, ns, dateTag);
         String dateString = readText(parser);
@@ -269,8 +266,8 @@ public class XmlFeedParser {
         compatiblesPatterns.add("yyyy-MM-d'T'k:m:s'.'SSS'Z'");
 
         Date date = null;
-        Long dateTime = 0l;
         int loopCounter = 0;
+
         // Checking right pattern
         for (String pattern : compatiblesPatterns) {
             loopCounter++;
@@ -283,37 +280,15 @@ public class XmlFeedParser {
             // Parsing date string into a Date object
             date = dateFormat.parse(dateString, new ParsePosition(0));
 
-            try {
-                // date time (UTC)
-                dateTime = date.getTime();
+            if (date != null)
+                // date found
                 break;
-            } catch (NullPointerException e) {
-                if (loopCounter == compatiblesPatterns.size()) {
-                    throw new IllegalArgumentException();
-                }
-            }
+            if (loopCounter == compatiblesPatterns.size())
+                // Pattern doesn't match
+                throw new IllegalArgumentException();
         }
 
-        // Computing elapsed time
-        long elapsedTime = System.currentTimeMillis() - dateTime;
-
-        // Affect right date format (twitter style)
-        if (elapsedTime < 1000 * 60 * 60) { // Less than 1h
-            int min = (int) elapsedTime / (1000 * 60);
-
-            if (min == 0)
-                min = 1;
-
-            dateString = min + " min";
-        } else if (elapsedTime <  1000 * 60 * 60 * 24) { // Less than 24h
-            int hour = (int) elapsedTime / (1000 * 60 * 60);
-
-            dateString = hour + " h";
-        } else { // Another day
-            dateString = new SimpleDateFormat("d MMM", Locale.ENGLISH).format(date);
-        }
-
-        return dateString;
+        return date;
     }
 
 
@@ -364,14 +339,15 @@ public class XmlFeedParser {
     /**
      * Entry static nested class.
      * Represents a feed element (entry tag for atom, item tag for rss)
-     * An instance can be called outside XmlFeedParser class.
+     * An instance can be called outside XmlFeedParser class (static class).
      * TODO: remname Entry ? (Item ?)
      */
     public static class Entry {
+        // TODO: change type and variables names ?
         public final String title;
         public final String link;
         public final String summary;
-        public final String date;
+        public final Date date;
         public String feed;
 
         /**
@@ -382,7 +358,7 @@ public class XmlFeedParser {
          * @param summary entry summary
          * @param date entry date
          */
-        private Entry(String title, String link, String summary, String date) {
+        private Entry(String title, String link, String summary, Date date) {
             this.title = title;
             this.link = link;
             this.summary = summary;

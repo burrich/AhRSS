@@ -7,7 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String DEBUG_TAG = "MaintActivity";
+    private static final String DEBUG_TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
