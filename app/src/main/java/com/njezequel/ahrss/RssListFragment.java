@@ -22,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,26 +32,31 @@ import java.util.Map;
 import com.njezequel.ahrss.XmlFeedParser.Entry;
 
 /**
- * ListFragment for displaying a feed entries list.
+ * ListFragment for displaying feed(s) entries list.
  * Xml feed is load asynchronously inside the nested DownloadFeedTask class (AsyncTask)
  */
 public class RssListFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String DEBUG_TAG = "RssListFragment";
-    private static final String FEED_URL = "http://www.gamekult.com/feeds/actu.html";
-    // http://www.metalorgie.com/feed/news
-    // http://www.gamekult.com/feeds/actu.html
-    // http://www.byzegut.fr/feeds/posts/default
-    // http://stackoverflow.com/feeds
-    // http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
 
     private View mCoordinatorView = null; // Root view of the fragment layout
     private SwipeRefreshLayout mSwipeLayout = null;
     private List<Map<String, String>> mData = null;
     private SimpleAdapter mListAdapter = null;
+    private List<String> mFeedUrls = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mFeedUrls = new ArrayList<>();
+
+        // http://www.metalorgie.com/feed/news
+        // http://www.gamekult.com/feeds/actu.html
+        // http://www.byzegut.fr/feeds/posts/default
+        // http://stackoverflow.com/feeds
+        // http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
+        mFeedUrls.add("http://www.gamekult.com/feeds/actu.html");
+        mFeedUrls.add("http://www.byzegut.fr/feeds/posts/default");
     }
 
     @Override
@@ -136,11 +142,11 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
     }
 
     /**
-     * Formating an entry date to a twitter string date style
+     * Formating an entry date to a twitter string date style.
      * Return examples :
-     * 2 min
-     * 23 h
-     * 20 Dec
+     * "2 min",
+     * "23 h",
+     * "20 Dec".
      *
      * @param date an Entry date
      * @return date String
@@ -179,9 +185,12 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
         if (networkInfo != null && networkInfo.isConnected()) {
-            // Download RSS feed in a worker thread
+            // Download RSS feeds in a worker thread
             // When finished, setListViewAdapter() is called
-            new DownloadFeedTask().execute(FEED_URL);
+            // TODO: parallel async task with executeOnExecutor()
+            new DownloadFeedTask().execute(
+                    (String[]) mFeedUrls.toArray(new String[mFeedUrls.size()])
+            );
         } else {
             // Connection error
             Snackbar.make(
@@ -193,7 +202,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
     }
 
     /**
-     * An AsyncTask task to load an xml feed.
+     * An AsyncTask task to load xml feed(s).
      * TODO: replace by a Loader ? (AsyncTaskLoader)
      */
     private class DownloadFeedTask extends AsyncTask<String, Void, List<Entry>> {
@@ -203,7 +212,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         @Override
         protected List<Entry> doInBackground(String... urls) {
             try {
-                return loadXmlFromNetwork(urls[0]);
+                return loadXmlFromNetwork(urls);
             } catch (XmlPullParserException|IOException|IllegalArgumentException e) {
                 e.printStackTrace();
                 return null;
@@ -227,27 +236,32 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         /**
          * Downloads XML and parses it.
          *
-         * @param urlString feed url
+         * @param urlsStrings feeds urls
          * @return list of feed entries
          * @throws XmlPullParserException
          * @throws IOException
          */
-        private List<Entry> loadXmlFromNetwork(String urlString)
+        private List<Entry> loadXmlFromNetwork(String[] urlsStrings)
                 throws XmlPullParserException, IOException {
             XmlFeedParser parser = new XmlFeedParser();
-            List<Entry> entries = null;
+            List<Entry> entries = new ArrayList<>();
             InputStream stream = null;
 
-            try {
-                stream = downloadUrl(urlString);
-                entries = parser.parse(stream);
-            } finally {
-                // Makes sure that the InputStream is closed after the app is finished using it
-                if (stream != null) {
-                    stream.close();
+            for (String url : urlsStrings) {
+                try {
+                    stream = downloadUrl(url);
+                    List<Entry> urlEntries = parser.parse(stream);
+                    entries.addAll(urlEntries);
+                } finally {
+                    // Makes sure that the InputStream is closed after the app is finished using it
+                    if (stream != null) {
+                        stream.close();
+                    }
                 }
             }
 
+            // Return entries sorted by Date desc
+            Collections.sort(entries, Collections.reverseOrder());
             return entries;
         }
 

@@ -1,5 +1,6 @@
 package com.njezequel.ahrss;
 
+import android.support.annotation.NonNull;
 import android.text.Html;
 import android.util.Xml;
 
@@ -342,7 +343,7 @@ public class XmlFeedParser {
      * An instance can be called outside XmlFeedParser class (static class).
      * TODO: remname Entry ? (Item ?)
      */
-    public static class Entry {
+    public static class Entry implements Comparable<Entry> {
         // TODO: change type and variables names ?
         public final String title;
         public final String link;
@@ -373,5 +374,9 @@ public class XmlFeedParser {
             this.feed = feed;
         }
 
+        @Override
+        public int compareTo(@NonNull Entry anotherEntry) {
+            return this.date.compareTo(anotherEntry.date);
+        }
     }
 }
