@@ -50,11 +50,13 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
 
         mFeedUrls = new ArrayList<>();
 
-        // http://www.metalorgie.com/feed/news
+        // RSS feeds :
         // http://www.gamekult.com/feeds/actu.html
+        // http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
+        // ATOM feeds :
+        // http://www.metalorgie.com/feed/news
         // http://www.byzegut.fr/feeds/posts/default
         // http://stackoverflow.com/feeds
-        // http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
         mFeedUrls.add("http://www.gamekult.com/feeds/actu.html");
         mFeedUrls.add("http://www.byzegut.fr/feeds/posts/default");
     }

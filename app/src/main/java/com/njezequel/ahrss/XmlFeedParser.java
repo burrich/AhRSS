@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 // TODO: abastract class
+// TODO: tester une entrée RSS avec un titre ou une description nul
 
 /**
  * Provide methods in order to parse an xml feed stream (rss or atom).
@@ -294,7 +295,7 @@ public class XmlFeedParser {
 
 
     /**
-     * Read a text content from a tag
+     * Read a text content from a tag.
      *
      * @param parser parser object
      * @return text String
@@ -313,7 +314,7 @@ public class XmlFeedParser {
     }
 
     /**
-     * Skip tags recursively
+     * Skip tags recursively.
      *
      * @param parser parser object
      * @throws XmlPullParserException
@@ -352,7 +353,7 @@ public class XmlFeedParser {
         public String feed;
 
         /**
-         * Default constructor
+         * Default constructor.
          *
          * @param title entry title
          * @param link entry link
@@ -367,7 +368,7 @@ public class XmlFeedParser {
         }
 
         /**
-         * feed setter
+         * Feed setter.
          * @param feed feed name
          */
         private void setFeed(String feed) {
