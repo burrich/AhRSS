@@ -119,6 +119,7 @@ public class XmlFeedParser {
         String title = null;
         String link = null;
         String summary = null;
+        String content = null;
         Date date = null;
 
         while (parser.next() != XmlPullParser.END_TAG) {
@@ -139,10 +140,8 @@ public class XmlFeedParser {
                     summary = readSummary(parser, tagName);
                     break;
                 case "content":
-                    if (summary == null) {
-                        summary = readSummary(parser, tagName);
-                        break;
-                    }
+                    content = readContent(parser);
+                    break;
                 case "pubDate":
                 case "updated":
                     date = readDate(parser, tagName);
@@ -153,11 +152,11 @@ public class XmlFeedParser {
             }
         }
 
-     return new Entry(title, link, summary, date);
+     return new Entry(title, link, summary, content, date);
     }
 
     /**
-     * Read a title tag text content inside a feed tag.
+     * Read a title tag text content.
      *
      * @param parser parser object
      * @return title String
@@ -173,7 +172,7 @@ public class XmlFeedParser {
     }
 
     /**
-     * Read a link tag text content inside a feed tag.
+     * Read a link tag text content.
      * Could be a link without attribute or a link with rel and href attribute
      *
      * @param parser parser object
@@ -184,7 +183,7 @@ public class XmlFeedParser {
     private String readLink(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, ns, "link");
 
-        String link = "";
+        String link = null;
         String tag = parser.getName();
         String relType = parser.getAttributeValue(null, "rel");
 
@@ -205,7 +204,7 @@ public class XmlFeedParser {
     }
 
     /**
-     * Read a summary tag text content inside a feed tag.
+     * Read a summary tag text content.
      *
      * @param parser parser object
      * @param summaryTag description for rss, summary or content for atom
@@ -234,7 +233,23 @@ public class XmlFeedParser {
     }
 
     /**
-     * Read a date tag text content inside a feed tag.
+     * Read a content tag text content.
+     *
+     * @param parser parser object
+     * @return html content string
+     * @throws IOException
+     * @throws XmlPullParserException
+     */
+    private String readContent(XmlPullParser parser) throws IOException, XmlPullParserException {
+        parser.require(XmlPullParser.START_TAG, ns, "content");
+        String content = readText(parser);
+        parser.require(XmlPullParser.END_TAG, ns, "content");
+
+        return content;
+    }
+
+    /**
+     * Read a date tag text content.
      *
      * @param parser parser object
      * @param dateTag pubDate for rss, updated for atom
@@ -303,7 +318,8 @@ public class XmlFeedParser {
      * @throws XmlPullParserException
      */
     private String readText(XmlPullParser parser) throws IOException, XmlPullParserException {
-        String result = "";
+        // TODO: test null text
+        String result = null;
 
         if (parser.next() == XmlPullParser.TEXT) {
             result = parser.getText();
@@ -349,6 +365,7 @@ public class XmlFeedParser {
         public final String title;
         public final String link;
         public final String summary;
+        public final String content;
         public final Date date;
         public String feed;
 
@@ -358,12 +375,14 @@ public class XmlFeedParser {
          * @param title entry title
          * @param link entry link
          * @param summary entry summary
+         * @param content entry html content
          * @param date entry date
          */
-        private Entry(String title, String link, String summary, Date date) {
+        private Entry(String title, String link, String summary, String content, Date date) {
             this.title = title;
             this.link = link;
             this.summary = summary;
+            this.content = content;
             this.date = date;
         }
 
@@ -371,7 +390,7 @@ public class XmlFeedParser {
          * Feed setter.
          * @param feed feed name
          */
-        private void setFeed(String feed) {
+        private void setFeed(String feed) { // TODO: remove ?
             this.feed = feed;
         }
 

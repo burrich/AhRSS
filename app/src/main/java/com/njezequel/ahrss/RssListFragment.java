@@ -6,12 +6,14 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -38,11 +40,11 @@ import com.njezequel.ahrss.XmlFeedParser.Entry;
 public class RssListFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String DEBUG_TAG = "RssListFragment";
 
-    private View mCoordinatorView = null; // Root view of the fragment layout
-    private SwipeRefreshLayout mSwipeLayout = null;
-    private List<Map<String, String>> mData = null;
-    private SimpleAdapter mListAdapter = null;
-    private List<String> mFeedUrls = null;
+    private View mCoordinatorView; // Root view of the fragment layout
+    private SwipeRefreshLayout mSwipeLayout;
+    private List<Map<String, String>> mData;
+    private SimpleAdapter mListAdapter;
+    private List<String> mFeedUrls;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -81,6 +83,20 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         mSwipeLayout = (SwipeRefreshLayout)
                 getActivity().findViewById(R.id.rss_list_swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(this);
+    }
+
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
+        // Replace RssListFragment with RssDetailsFragment
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        transaction.replace(
+                R.id.main_activity_fragment_container,
+                RssDetailsFragment.newInstance(mData.get(position))
+        );
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     @Override
@@ -133,11 +149,14 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
             Map<String, String> lineData;
 
             lineData = new HashMap<>();
+            // Data displayed in the listview
             lineData.put("title", entry.title);
             lineData.put("feed", entry.feed);
             lineData.put("summary", entry.summary);
-            lineData.put("link", entry.link);
             lineData.put("date", formatDate(entry.date));
+            // Data only sent to RssDetailsFragment and not displayed
+            lineData.put("link", entry.link);
+            lineData.put("content", entry.content); // TODO: format content
 
             mData.add(lineData);
         }
@@ -153,7 +172,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
      * @param date an Entry date
      * @return date String
      */
-    private String formatDate(Date date) { // TODO: move to XmlFeedParser
+    private String formatDate(Date date) {
         // Computing elapsed time
         long dateTime = date.getTime();
         long elapsedTime = System.currentTimeMillis() - dateTime;
