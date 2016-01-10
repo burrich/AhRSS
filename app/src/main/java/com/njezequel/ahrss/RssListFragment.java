@@ -6,8 +6,10 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -40,6 +43,7 @@ import com.njezequel.ahrss.XmlFeedParser.Entry;
 public class RssListFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String DEBUG_TAG = "RssListFragment";
 
+    private FragmentActivity mActivity;
     private View mCoordinatorView; // Root view of the fragment layout
     private SwipeRefreshLayout mSwipeLayout;
     private List<Map<String, String>> mData;
@@ -50,6 +54,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mActivity = getActivity();
         mFeedUrls = new ArrayList<>();
 
         // RSS feeds :
@@ -59,8 +64,8 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         // http://www.metalorgie.com/feed/news
         // http://www.byzegut.fr/feeds/posts/default
         // http://stackoverflow.com/feeds
-        mFeedUrls.add("http://www.gamekult.com/feeds/actu.html");
         mFeedUrls.add("http://www.byzegut.fr/feeds/posts/default");
+        mFeedUrls.add("http://www.gamekult.com/feeds/actu.html");
     }
 
     @Override
@@ -81,7 +86,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
 
         // Setting swipe layout listener for pull to refresh
         mSwipeLayout = (SwipeRefreshLayout)
-                getActivity().findViewById(R.id.rss_list_swipe_refresh_layout);
+                mActivity.findViewById(R.id.rss_list_swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(this);
     }
 
@@ -93,11 +98,13 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(
                 R.id.main_activity_fragment_container,
-                RssDetailsFragment.newInstance(mData.get(position))
+                RssDetailsFragment.newInstance(generateEntryHtml(position))
         );
         transaction.addToBackStack(null);
         transaction.commit();
     }
+
+
 
     @Override
     public void onRefresh() {
@@ -106,11 +113,65 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
     }
 
     /**
+     * Generate an entry html string from a listview position
+     *
+     * @param entryPosition entry position inside the listview
+     * @return entry html string
+     */
+    private String generateEntryHtml(final int entryPosition) {
+        Map<String, String> currentElt = mData.get(entryPosition);
+        TextView textview = (TextView) mActivity.findViewById(R.id.rss_list_title);
+
+        // Textview color, size and padding
+        int color = ContextCompat.getColor(mActivity, R.color.colorTextGray);
+        String hexColor = String.format("#%06X", (0xFFFFFF & color));
+
+        float textviewSize = Util.dpFromPx(mActivity, textview.getTextSize());
+
+        float horizontalPadding = Util.dpFromPx(
+                mActivity,
+                mActivity.getResources().getDimension(R.dimen.rss_list_left_padding)
+        );
+        float verticalPadding = Util.dpFromPx(
+                mActivity,
+                mActivity.getResources().getDimension(R.dimen.rss_list_item_vertical_padding)
+        );
+
+        // link
+        String link = currentElt.get("link");
+
+        return
+                "<html>" +
+                    "<head>" +
+                        "<style type=\"text/css\">" +
+                            "body { " +
+                            "margin: 0 !important; " +
+                            "padding-top: " + verticalPadding + "px; " +
+                            "padding-bottom: " +verticalPadding + "px; " +
+                            "padding-left: " + horizontalPadding + "px; " +
+                            "padding-right: " + horizontalPadding + "px; " +
+                            "color:" + hexColor + "; }" +
+                            "h1, h2, p { font-size: " + textviewSize + "px; }" +
+                            "h2 { font-weight: normal; }" +
+                        "</style>" +
+                    "</head>" +
+                    "<body>" +
+                        "<h1>" + currentElt.get("title") + "</h1>" +
+                        "<h2>" + currentElt.get("feed") + "</h2>" +
+                        "<p>" + currentElt.get("content") + "</p>" +
+                        "<p><a href=\"" + link + "\">" + link + "</a></p>" +
+                        "<p>" + currentElt.get("date") + "</p>" +
+                    "</body>" +
+                "</html>"
+        ;
+    }
+
+    /**
      * Set a SimpleAdapter to the fragment or update adapter data.
      *
      * @param entries returned after xml parsing
      */
-    private void bindDataToAdapter(List<Entry> entries) {
+    private void bindDataToAdapter(final List<Entry> entries) {
         if (mData == null) { // New adapter
             mData = new ArrayList<>();
 
@@ -144,7 +205,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
      *
      * @param entries Entry list
      */
-    private void addingEntriesToDataMap(List<Entry> entries) {
+    private void addingEntriesToDataMap(final List<Entry> entries) {
         for (Entry entry : entries) {
             Map<String, String> lineData;
 
@@ -172,7 +233,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
      * @param date an Entry date
      * @return date String
      */
-    private String formatDate(Date date) {
+    private String formatDate(final Date date) {
         // Computing elapsed time
         long dateTime = date.getTime();
         long elapsedTime = System.currentTimeMillis() - dateTime;
@@ -202,7 +263,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
      */
     private void loadFeed() {
         ConnectivityManager connMgr = (ConnectivityManager)
-               getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+                mActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
         if (networkInfo != null && networkInfo.isConnected()) {

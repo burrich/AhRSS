@@ -11,11 +11,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
-import android.widget.TextView;
-
-import java.util.HashMap;
-import java.util.Map;
-
 
 /**
  * A simple {@link Fragment} subclass.
@@ -24,20 +19,20 @@ import java.util.Map;
  */
 public class RssDetailsFragment extends Fragment {
     private static final String DEBUG_TAG = "RssDetailsFragment";
-    private static final String ARG_ENTRY_MAP = "entryMap";
+    private static final String ARG_ENTRY_STRING = "entryString";
 
     private FragmentActivity mActivity;
-    private Map<?, ?> mEntryMap; // No type in order to manage unchecked casts elt by elt
+    private String mEntry;
 
     /**
      * Factory method to create a new instance of this fragment using the provided parameter.
      *
-     * @param entryMap a map with Entry elements
+     * @param entryHtml a map with Entry elements
      * @return A new instance of fragment RssDetailsFragment
      */
-    public static RssDetailsFragment newInstance(Map<String, String> entryMap) {
+    public static RssDetailsFragment newInstance(String entryHtml) {
         Bundle args = new Bundle();
-        args.putSerializable(ARG_ENTRY_MAP, (HashMap<String, String>) entryMap);
+        args.putString(ARG_ENTRY_STRING, entryHtml);
 
         RssDetailsFragment fragment = new RssDetailsFragment();
         fragment.setArguments(args);
@@ -49,10 +44,10 @@ public class RssDetailsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Getting entry map argument
+        // Getting entry string argument
         Bundle args = getArguments();
         if (args != null) {
-            mEntryMap = (HashMap<?, ?>) args.getSerializable(ARG_ENTRY_MAP);
+            mEntry = args.getString(ARG_ENTRY_STRING);
         }
 
         mActivity = getActivity();
@@ -71,30 +66,16 @@ public class RssDetailsFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        // TODO: wrap textviews inside a webview
-
-        // Getting fragment argument (entry map)
-        if (mEntryMap != null) {
-            TextView title = (TextView) mActivity.findViewById(R.id.rss_details_title);
-            title.setText((String) mEntryMap.get("title"));
-
-            TextView feed = (TextView) mActivity.findViewById(R.id.rss_details_feed);
-            feed.setText((String) mEntryMap.get("feed"));
-
-            TextView date = (TextView) mActivity.findViewById(R.id.rss_details_date);
-            date.setText((String) mEntryMap.get("date"));
-
-            String contentString = (String) mEntryMap.get("content");
-            if (contentString == null)
-                contentString = (String) mEntryMap.get("summary");
+        if (mEntry != null) {
             WebView content = (WebView) mActivity.findViewById(R.id.rss_details_webview);
 
-            content.setBackgroundColor(Color.TRANSPARENT);
+            // Load html into webview
             content.loadData(
-                contentString,
-                "text/html; charset=utf-8",
-                "uft-8"
+                    mEntry,
+                    "text/html; charset=utf-8",
+                    "uft-8"
             );
+            content.setBackgroundColor(Color.TRANSPARENT);
         }
     }
 

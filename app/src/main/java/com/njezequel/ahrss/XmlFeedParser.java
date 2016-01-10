@@ -152,7 +152,31 @@ public class XmlFeedParser {
             }
         }
 
-     return new Entry(title, link, summary, content, date);
+        // Cutting summary if the text is too long
+        // and adding the original content to the content field (if null)
+        String summaryNoHtml = null;
+
+        if (summary == null) {
+            summary = content;
+        }
+
+        if (summary != null) {
+            if (content == null) {
+                content = summary; // with HTML tags
+            }
+
+            summary = summary.replaceAll("<img.+(img)*>", "");
+            summary = summary.trim();
+            summaryNoHtml = Html.fromHtml(summary, null, null).toString();
+            summaryNoHtml = summaryNoHtml.replaceAll("((\\n)+)$", "");
+
+            int maxChar = 200;
+            if (summaryNoHtml.length() > maxChar) {
+                summaryNoHtml = summaryNoHtml.substring(0, maxChar - 4).concat("...");
+            }
+        }
+
+        return new Entry(title, link, summaryNoHtml, content, date);
     }
 
     /**
@@ -217,16 +241,7 @@ public class XmlFeedParser {
         parser.require(XmlPullParser.START_TAG, ns, summaryTag);
         String summary = readText(parser);
 
-        if (summaryTag.equals("content")) {
-            // TODO: replace img
-            summary = Html.fromHtml(summary).toString();
-        }
-
-        // Cut text if necessary and concat "..."
-        int maxChar = 200;
-        if (summary.length() > maxChar) {
-            summary = summary.substring(0, maxChar - 4).concat("...");
-        }
+        // TODO: replace img
 
         parser.require(XmlPullParser.END_TAG, ns, summaryTag);
         return summary;

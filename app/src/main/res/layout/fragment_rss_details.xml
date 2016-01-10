@@ -1,40 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<WebView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rss_details_webview"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingLeft="@dimen/rss_details_horizontal_padding"
-    android:paddingRight="@dimen/rss_details_horizontal_padding"
-    android:paddingTop="@dimen/rss_details_vertical_padding"
-    android:paddingBottom="@dimen/rss_details_vertical_padding"
-    android:orientation="vertical">
-
-    <TextView android:id="@+id/rss_details_title"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/rss_list_placeholder" />
-
-    <TextView android:id="@+id/rss_details_feed"
-        android:textSize="16sp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/rss_list_placeholder" />
-
-
-    <TextView android:id="@+id/rss_details_date"
-        android:textSize="16sp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="@dimen/rss_list_item_elt_vertical_padding"
-        android:text="@string/rss_list_placeholder" />
-
-    <WebView
-        android:id="@+id/rss_details_webview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </WebView>
-</LinearLayout>
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin">
+</WebView>
 
 
