@@ -4,10 +4,10 @@ package com.njezequel.ahrss;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -21,7 +21,7 @@ public class RssDetailsFragment extends Fragment {
     private static final String DEBUG_TAG = "RssDetailsFragment";
     private static final String ARG_ENTRY_STRING = "entryString";
 
-    private FragmentActivity mActivity;
+    private MainActivity mActivity;
     private String mEntry;
 
     /**
@@ -50,9 +50,9 @@ public class RssDetailsFragment extends Fragment {
             mEntry = args.getString(ARG_ENTRY_STRING);
         }
 
-        mActivity = getActivity();
+        mActivity = (MainActivity) getActivity();
 
-        setHasOptionsMenu(true); // In order to update appbar (back button)
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -80,13 +80,8 @@ public class RssDetailsFragment extends Fragment {
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                mActivity.onBackPressed();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        menu.findItem(R.id.action_refresh).setVisible(false);
     }
 }

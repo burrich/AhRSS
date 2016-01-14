@@ -1,25 +1,36 @@
 package com.njezequel.ahrss;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.android.debug.hv.ViewServer;
 
 public class MainActivity extends AppCompatActivity {
     private static final String DEBUG_TAG = "MainActivity";
 
+    private View mCoordinatorView;
     private FragmentManager mFragmentManager;
+    private DrawerLayout mDrawerLayout;
+    private NavigationView mNavigationView;
+    private ActionBarDrawerToggle mDrawerToggle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main); // TODO: clean layout files (margin padding)
+
+        mCoordinatorView = findViewById(R.id.root_coordinator);
 
         // Adding rss list fragment to the frame layout
         mFragmentManager = getSupportFragmentManager();
@@ -27,33 +38,90 @@ public class MainActivity extends AppCompatActivity {
             .add(R.id.main_activity_fragment_container, new RssListFragment())
             .commit();
 
+        // TODO: init functions
+
         // ActionBar init
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         setTitle(R.string.main_activity_title);
+        ActionBar bar = getSupportActionBar();
+
+        if (bar != null) {
+            bar.setDisplayHomeAsUpEnabled(true);
+        }
 
         // Fragment change listener
         mFragmentManager.addOnBackStackChangedListener(
-            new FragmentManager.OnBackStackChangedListener() {
-                @Override
-                public void onBackStackChanged() {
-                    // Show back button on details fragment and hide on list fragment
-                    ActionBar bar = getSupportActionBar();
-                    if (bar != null)
+                new FragmentManager.OnBackStackChangedListener() {
+                    @Override
+                    public void onBackStackChanged() {
                         if (mFragmentManager.getBackStackEntryCount() > 0) {
                             // RssListFragment is on the stack
-                            bar.setHomeButtonEnabled(true);
-                            bar.setDisplayHomeAsUpEnabled(true);
+                            // Disabling drawer toggle icon
+                            mDrawerToggle.setDrawerIndicatorEnabled(false);
+
                         } else {
-                            bar.setDisplayHomeAsUpEnabled(false);
-                            bar.setHomeButtonEnabled(false);
+                            mDrawerToggle.setDrawerIndicatorEnabled(true);
                         }
+                    }
                 }
-            }
         );
 
-        // In order to run Hierarchy Viewver on a non developper phone
+        // Navigation drawer init
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        // Navigation item listener
+        mNavigationView = (NavigationView) findViewById(R.id.navigation);
+        mNavigationView.setNavigationItemSelectedListener(
+                new NavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(MenuItem item) {
+                        mDrawerLayout.closeDrawer(mNavigationView);
+                        return true;
+                    }
+                }
+        );
+
+        // Drawer swipe listener
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this,
+                mDrawerLayout,
+                toolbar,
+                R.string.drawer_open,
+                R.string.drawer_close
+        ) {
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+            }
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+            }
+        };
+
+        // Navigation back icon listener
+        mDrawerToggle.setToolbarNavigationClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
+
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+
+        // In order to run Hierarchy Viewver on a non developer phone
         ViewServer.get(this).addWindow(this);
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+
+        // Sync the toggle state after onRestoreInstanceState has occurred
+        // and set the material design icon
+        mDrawerToggle.syncState();
     }
 
     @Override
@@ -69,32 +137,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        // Call when android:configChanges="orientation|screenSize" is assigned to the actvity
+        // Then, when the orientation changes, the activity is not destroyed
+        super.onConfigurationChanged(newConfig);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
-
-//        MenuItem item = menu.add(Menu.NONE, 0, Menu.NONE, "t");
-//        MenuItemCompat.setShowAsAction(item, MenuItemCompat.SHOW_AS_ACTION_ALWAYS | MenuItemCompat.SHOW_AS_ACTION_WITH_TEXT);
-//        item.setIcon(android.R.drawable.ic_btn_speak_now);
-//
-//        MenuItem item2 = menu.add(Menu.NONE, 1, Menu.NONE, "ttt");
-//        MenuItemCompat.setShowAsAction(item2, MenuItemCompat.SHOW_AS_ACTION_ALWAYS | MenuItemCompat.SHOW_AS_ACTION_WITH_TEXT);
-
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * mCoordinator getter
+     *
+     * @return mCoordinatorView
+     */
+    public View getCoordinatorLayout() {
+        return mCoordinatorView;
     }
 }

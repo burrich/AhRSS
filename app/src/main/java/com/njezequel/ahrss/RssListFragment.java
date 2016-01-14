@@ -6,13 +6,12 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -43,8 +42,7 @@ import com.njezequel.ahrss.XmlFeedParser.Entry;
 public class RssListFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String DEBUG_TAG = "RssListFragment";
 
-    private FragmentActivity mActivity;
-    private View mCoordinatorView; // Root view of the fragment layout
+    private MainActivity mActivity;
     private SwipeRefreshLayout mSwipeLayout;
     private List<Map<String, String>> mData;
     private SimpleAdapter mListAdapter;
@@ -54,7 +52,9 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mActivity = getActivity();
+        mActivity = (MainActivity) getActivity();
+
+        // Init static feeds
         mFeedUrls = new ArrayList<>();
 
         // RSS feeds :
@@ -64,20 +64,15 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         // http://www.metalorgie.com/feed/news
         // http://www.byzegut.fr/feeds/posts/default
         // http://stackoverflow.com/feeds
-        mFeedUrls.add("http://www.byzegut.fr/feeds/posts/default");
         mFeedUrls.add("http://www.gamekult.com/feeds/actu.html");
+
+        setHasOptionsMenu(true);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        mCoordinatorView = inflater.inflate(R.layout.fragment_rss_list, container, false);
-
-        // Loading rss feed
-        // We need the root view (mCoordinatorView) before call in order to use Snackbar inside
-        this.loadFeed();
-
-        return mCoordinatorView;
+        return inflater.inflate(R.layout.fragment_rss_list, container, false);
     }
 
     @Override
@@ -88,6 +83,22 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         mSwipeLayout = (SwipeRefreshLayout)
                 mActivity.findViewById(R.id.rss_list_swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(this);
+
+        if (mData == null) {
+            // Loading rss feed
+            onRefresh();
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
+                onRefresh();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -104,11 +115,19 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         transaction.commit();
     }
 
-
-
     @Override
     public void onRefresh() {
-        // Updating entries when the user pull to refresh
+        // enabling refresh spinner
+        if (!mSwipeLayout.isRefreshing()) {
+            mSwipeLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    mSwipeLayout.setRefreshing(true);
+                }
+            });
+        }
+
+        // Loading rss feed
         loadFeed();
     }
 
@@ -188,7 +207,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
 
             // Set adapter
             mListAdapter = new SimpleAdapter(
-                    getContext(), mData, R.layout.item_rss_list, viewsKeys, views
+                    mActivity, mData, R.layout.rss_list_list, viewsKeys, views
             );
             this.setListAdapter(mListAdapter);
 
@@ -196,8 +215,10 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
             mData.clear();
             addingEntriesToDataMap(entries);
             mListAdapter.notifyDataSetChanged();
-            mSwipeLayout.setRefreshing(false);
         }
+
+        // Disabling spinner after refresh
+        mSwipeLayout.setRefreshing(false);
     }
 
     /**
@@ -276,7 +297,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
         } else {
             // Connection error
             Snackbar.make(
-                    mCoordinatorView,
+                    mActivity.getCoordinatorLayout(),
                     R.string.no_connection,
                     Snackbar.LENGTH_LONG
             ).show();
@@ -308,7 +329,7 @@ public class RssListFragment extends ListFragment implements SwipeRefreshLayout.
                 bindDataToAdapter(entries);
             } else {
                 Snackbar.make(
-                        mCoordinatorView,
+                        mActivity.getCoordinatorLayout(),
                         R.string.feed_loading_error,
                         Snackbar.LENGTH_LONG
                 ).show();
